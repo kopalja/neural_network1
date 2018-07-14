@@ -46,7 +46,8 @@ class MyNet(object):
         self.step_size = step_size
         self.epoch = epoch
         self.mini_batch_size = mini_batch_size
-        self.regulation = regulation
+        self.regulation = regulation + 1
+        # toto je zmena
 
 
     # train network
