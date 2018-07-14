@@ -45,6 +45,7 @@ class MyNet(object):
     def set_hyper_parameters(self, step_size, epoch, mini_batch_size, regulation):
         a = 40
         # this is change
+        #niekto prisiel !!!
         self.step_size = step_size
         self.epoch = epoch
         self.mini_batch_size = mini_batch_size
