@@ -52,6 +52,13 @@ class MyNet(object):
         self.regulation = regulation
 
 
+    # new branch called ajka
+    def f(self, x):
+        return 42
+
+    def f2(self, x):
+        return 2    
+
     # train network
     def train(self, train_data, test_data):
         random.shuffle(train_data)
