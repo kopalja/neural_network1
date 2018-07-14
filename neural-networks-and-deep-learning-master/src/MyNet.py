@@ -43,11 +43,12 @@ class MyNet(object):
     
     # set hyper params
     def set_hyper_parameters(self, step_size, epoch, mini_batch_size, regulation):
+        a = 40
+        # this is change
         self.step_size = step_size
         self.epoch = epoch
         self.mini_batch_size = mini_batch_size
-        self.regulation = regulation + 1
-        # toto je zmena
+        self.regulation = regulation
 
 
     # train network
