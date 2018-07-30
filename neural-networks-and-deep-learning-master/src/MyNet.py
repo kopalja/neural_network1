@@ -43,21 +43,11 @@ class MyNet(object):
     
     # set hyper params
     def set_hyper_parameters(self, step_size, epoch, mini_batch_size, regulation):
-        a = 40
-        # this is change
-        #niekto prisiel !!!
         self.step_size = step_size
         self.epoch = epoch
         self.mini_batch_size = mini_batch_size
         self.regulation = regulation
-
-
-    # new branch called ajka
-    def f(self, x):
-        return 42
-
-    def f2(self, x):
-        return 2    
+  
 
     # train network
     def train(self, train_data, test_data):
@@ -71,7 +61,6 @@ class MyNet(object):
                 self.train_by_mini_batch(mini_batch, len(train_data))
 
             print("Epoch - test_data {0}: {1} / {2}".format(i, self.evaluate(test_data), len(test_data)))    
-            #print("Epoch - train_data {0}: {1} / {2}".format(i, self.evaluate(train_data), len(train_data)))   
                 
                 
     def train_by_mini_batch(self, mini_batch, n):
@@ -143,7 +132,7 @@ def sigmoid_prime(x):
 
 training_data, validation_data, test_data = mnist_loader.load_data_wrapper()
 
-net = MyNet([784, 100, 10], CrossEntropyCost)
+net = MyNet([784, 30, 30, 30, 30, 10], CrossEntropyCost)
 
 net.set_hyper_parameters(0.1, 30, 10, 5.0)
 
