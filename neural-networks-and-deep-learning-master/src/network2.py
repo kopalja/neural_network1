@@ -206,8 +206,7 @@ class Network(object):
                         for w, nw in zip(self.weights, nabla_w)]
 
                         
-        self.biases = [b-(eta/len(mini_batch))*nb
-                       for b, nb in zip(self.biases, nabla_b)]
+        self.biases = [b-(eta/len(mini_batch))*nb for b, nb in zip(self.biases, nabla_b)]
 
     def backprop(self, x, y):
         """Return a tuple ``(nabla_b, nabla_w)`` representing the
@@ -267,11 +266,9 @@ class Network(object):
 
         """
         if convert:
-            results = [(np.argmax(self.feedforward(x)), np.argmax(y))
-                       for (x, y) in data]
+            results = [(np.argmax(self.feedforward(x)), np.argmax(y)) for (x, y) in data]
         else:
-            results = [(np.argmax(self.feedforward(x)), y)
-                        for (x, y) in data]
+            results = [(np.argmax(self.feedforward(x)), y)for (x, y) in data]
         return sum(int(x == y) for (x, y) in results)
 
     def total_cost(self, data, lmbda, convert=False):
@@ -286,8 +283,7 @@ class Network(object):
             a = self.feedforward(x)
             if convert: y = vectorized_result(y)
             cost += self.cost.fn(a, y)/len(data)
-        cost += 0.5*(lmbda/len(data))*sum(
-            np.linalg.norm(w)**2 for w in self.weights)
+        cost += 0.5*(lmbda/len(data))*sum(np.linalg.norm(w)**2 for w in self.weights)
         return cost
 
     def save(self, filename):
