@@ -136,13 +136,9 @@ class Net(object):
 
 
         cost = self.costFunction(output, y)
-
         accuraci = self.accuraci(output, y)
-
         grads = T.grad(cost, self.params)
-
         self.speed = [ speed - self.learning_rate * grad  for speed, grad in zip(self.speed, grads)]
-
         #updates = [(param, param + speed ) for param, speed in zip(self.params, self.speed)]
         updates = [(param, param - self.learning_rate * grad ) for param, grad in zip(self.params, grads)]
 
@@ -214,26 +210,26 @@ class Net(object):
 
 
 
-theano.config.floatX = 'float32'
+# theano.config.floatX = 'float32'
 
-training_data, validation_data, test_data = load_data_shared()
+# training_data, validation_data, test_data = load_data_shared()
 
-expanded_data, _, _ = load_data_shared("../data/mnist_expanded.pkl.gz")
+# print(validation_data)
 
 
 
-net = Net(
-    [784, 50, 10], 
-    training_data, 
-    validation_data, 
-    CostFunctions().quadratic,
-    learning_rate = 1.5, 
-    minibatch_size = 10, 
-    regulation_param = 0.05
-)
+# net = Net(
+#     [784, 30, 10], 
+#     training_data, 
+#     validation_data, 
+#     CostFunctions().quadratic,
+#     learning_rate = 1.5, 
+#     minibatch_size = 10, 
+#     regulation_param = 0.0
+# )
 
-net.prepare_and_compile_function()
+# net.prepare_and_compile_function()
 
-net.train(epoch = 10)
+# net.train(epoch = 10)
 
 
