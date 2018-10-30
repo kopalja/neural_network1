@@ -7,7 +7,7 @@ from theano2 import *
 
 class WordGenerator(object):
     
-    key_words = ['dva', 'tri', 'pat', 'sto', 'dom']
+    key_words = ['dva', 'tri', 'pat', 'sto', 'dom', 'aaa', 'aab', 'aac', 'aad', 'aae', 'aaf']
 
 
     def char_to_array(self, ch):
@@ -40,7 +40,7 @@ class WordGenerator(object):
         return result
 
     def get_training_pair(self):
-        r = np.random.randint(0, 2, 1)[0]
+        r = np.random.randint(0, 1, 1)[0]
 
         if (r == 0):
             i = np.random.randint(0, len(self.key_words), 1)[0]

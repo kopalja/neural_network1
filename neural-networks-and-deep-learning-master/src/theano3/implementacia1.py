@@ -47,6 +47,8 @@ class WordGenerator(object):
                     return self.vectorized_word(x), 1
             return self.vectorized_word(x), 0
 
+
+
 w = WordGenerator()
 for i  in range(10):
     print(w.get_training_pair()) 

@@ -164,7 +164,6 @@ class Net(object):
         return T.mean(T.eq(results_ex, results_obt))  
     
     def regulation(self):
-        
         summ = theano.shared(0)
         for layer in self.l:
             s, _ = theano.scan(

@@ -31,6 +31,7 @@ versions of Theano.
 """
 
 import time
+import math
 
 #### Libraries
 # Standard library
@@ -72,6 +73,10 @@ else:
 def load_data_shared(filename="../data/mnist.pkl.gz"):
     f = gzip.open(filename, 'rb')
     training_data, validation_data, test_data = pickle.load(f, encoding='latin1')
+
+    training_x, training_y = training_data
+    training_data = (training_x[:2000], training_y[:2000])
+
     f.close()
     def shared(data):
         """Place the data into shared variables.  This allows Theano to copy
@@ -103,7 +108,7 @@ class Network(object):
             prev_layer, layer  = self.layers[j-1], self.layers[j]
             layer.set_inpt(prev_layer.output, prev_layer.output_dropout, self.mini_batch_size)
         self.output = self.layers[-1].output
-        self.output_dropout = self.layers[-1].output_dropout
+        self.output_dropout = self.layers[-1].output
 
     def SGD(self, training_data, epochs, mini_batch_size, eta,
             validation_data, test_data, lmbda=0.0):
@@ -121,22 +126,23 @@ class Network(object):
         learning_rate = T.scalar(dtype=self.params[0].dtype)
         i = T.lscalar()
 
-        l2_norm_squared = sum([(layer.w**2).sum() for layer in self.layers])
+        l2_norm_squared = sum([(layer.w).sum() for layer in self.layers])
         cost = self.layers[-1].cost(self) + 0.5*lmbda*l2_norm_squared/num_training_batches
         grads = T.grad(cost, self.params)
-        updates = [(param, param - eta * grad *  learning_rate) for param, grad in zip(self.params, grads)]
+        updates = [(param, param - eta * grad) for param, grad in zip(self.params, grads)]
 
         # define functions to train a mini-batch, and to compute the
         # accuracy in validation and test mini-batches.
 
         train_mb = theano.function(
-            [i, learning_rate], cost, updates= updates,
+            [i, learning_rate], l2_norm_squared, updates= updates,
             givens={
                 self.x:
                 training_x[i*self.mini_batch_size: (i+1)*self.mini_batch_size],
                 self.y:
                 training_y[i*self.mini_batch_size: (i+1)*self.mini_batch_size]
-            })
+            },
+            on_unused_input='ignore')
         validate_mb_accuracy = theano.function(
             [i], self.layers[-1].accuracy(self.y),
             givens={
@@ -164,12 +170,18 @@ class Network(object):
         # Do the actual training
         best_validation_accuracy = 0.0
         epoch = 0
+        cost = 0
         while True:
+            if (epoch > 5):
+                return
             epoch += 1
+            print(cost)
             for minibatch_index in range(num_training_batches):
                 iteration = num_training_batches*epoch+minibatch_index
-                train_mb(minibatch_index, self.learning_rate_function(epoch))
-                print(self.learning_rate_function(epoch))
+                cost = train_mb(minibatch_index, self.learning_rate_function(epoch))
+                if (math.isnan(cost)):
+                    print("cost is naaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaan!!!!!!")
+                    return
                 if (minibatch_index + 1) == num_training_batches:
                     validation_accuracy = np.mean([validate_mb_accuracy(j) for j in range(num_validation_batches)])
                     print("Epoch {0}: validation accuracy {1:.2%}".format(epoch, validation_accuracy))
@@ -236,6 +248,7 @@ class ConvPoolLayer(object):
 
     def set_inpt(self, inpt, inpt_dropout, mini_batch_size):
         self.inpt = inpt.reshape(self.image_shape)
+
         conv_out = conv2d(
             input=self.inpt, filters=self.w, filter_shape=self.filter_shape,
             input_shape=self.image_shape)
@@ -285,7 +298,7 @@ class SoftmaxLayer(object):
         self.p_dropout = p_dropout
         # Initialize weights and biases
         self.w = theano.shared(
-            np.zeros((n_in, n_out), dtype=theano.config.floatX),
+            np.ones((n_in, n_out), dtype=theano.config.floatX),
             name='w', borrow=True)
         self.b = theano.shared(
             np.zeros((n_out,), dtype=theano.config.floatX),
@@ -302,7 +315,7 @@ class SoftmaxLayer(object):
 
     def cost(self, net):
         "Return the log-likelihood cost."
-        return -1 * T.mean(T.log(self.output_dropout)[T.arange(net.y.shape[0]), net.y])
+        return -1 * T.mean(T.log(self.output)[T.arange(net.y.shape[0]), net.y])
 
     def accuracy(self, y):
         "Return the accuracy for the mini-batch."
@@ -327,26 +340,26 @@ mini_batch_size = 10
 
 expanded_data, _, _ = load_data_shared("../data/mnist_expanded.pkl.gz")
 
-net = Network([
-    ConvPoolLayer(image_shape=(mini_batch_size, 1, 28, 28),
-                    filter_shape=(20, 1, 5, 5), 
-                    poolsize=(2, 2),
-                    activation_fn=ReLU),
-    ConvPoolLayer(image_shape=(mini_batch_size, 20, 12, 12),
-                    filter_shape=(40, 20, 5, 5),
-                    poolsize=(2, 2),
-                    activation_fn=ReLU),
-    FullyConnectedLayer(n_in=40*4*4, 
-                    n_out=100,
-                    activation_fn=ReLU),
-    SoftmaxLayer(n_in=100, n_out=10)], mini_batch_size)
 
-start = time.time()
-                
-                
+for i in range(20):
+    net = Network([
+        ConvPoolLayer(image_shape=(mini_batch_size, 1, 28, 28),
+                        filter_shape=(5, 1, 5, 5), 
+                        poolsize=(2, 2),
+                        activation_fn=ReLU),
+        ConvPoolLayer(image_shape=(mini_batch_size, 5, 12, 12),
+                        filter_shape=(10, 5, 5, 5),
+                        poolsize=(2, 2),
+                        activation_fn=ReLU),
+        FullyConnectedLayer(n_in=10*4*4, 
+                        n_out=100,
+                        activation_fn=ReLU),
+        SoftmaxLayer(n_in=100, n_out=10)], mini_batch_size)
 
-
-net.SGD(training_data, 60, mini_batch_size, 0.03, validation_data, test_data, lmbda=0.1)
+    start = time.time()
+                    
+            
+    net.SGD(training_data, 60, mini_batch_size, 0.03, validation_data, test_data)
 
 end = time.time()
 print(end - start)
