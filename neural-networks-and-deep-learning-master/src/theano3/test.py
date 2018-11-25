@@ -1,3 +1,7 @@
+# import sys
+# sys.path.append('C:\\xps\\Python\\Neural-Network\\neural-networks-and-deep-learning-master\\src\\theano3')
+
+
 import unittest
 import numpy
 import theano

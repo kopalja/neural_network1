@@ -281,11 +281,8 @@ class FullyConnectedLayer(object):
         self.inpt = inpt.reshape((mini_batch_size, self.n_in))
         self.output = self.activation_fn((1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
         self.y_out = T.argmax(self.output, axis=1)
-        self.inpt_dropout = dropout_layer(
-            inpt_dropout.reshape((mini_batch_size, self.n_in)), self.p_dropout)
-        self.output_dropout = self.activation_fn(
-            T.dot(self.inpt_dropout, self.w) + self.b)
-
+        self.inpt_dropout = dropout_layer(inpt_dropout.reshape((mini_batch_size, self.n_in)), self.p_dropout)
+        self.output_dropout = self.activation_fn(T.dot(self.inpt_dropout, self.w) + self.b)
     def accuracy(self, y):
         "Return the accuracy for the mini-batch."
         return T.mean(T.eq(y, self.y_out))
@@ -309,8 +306,7 @@ class SoftmaxLayer(object):
         self.inpt = inpt.reshape((mini_batch_size, self.n_in))
         self.output = softmax((1-self.p_dropout)*T.dot(self.inpt, self.w) + self.b)
         self.y_out = T.argmax(self.output, axis=1)
-        self.inpt_dropout = dropout_layer(
-            inpt_dropout.reshape((mini_batch_size, self.n_in)), self.p_dropout)
+        self.inpt_dropout = dropout_layer(inpt_dropout.reshape((mini_batch_size, self.n_in)), self.p_dropout)
         self.output_dropout = softmax(T.dot(self.inpt_dropout, self.w) + self.b)
 
     def cost(self, net):
@@ -328,8 +324,7 @@ def size(data):
     return data[0].get_value(borrow=True).shape[0]
 
 def dropout_layer(layer, p_dropout):
-    srng = shared_randomstreams.RandomStreams(
-        np.random.RandomState(0).randint(999999))
+    srng = shared_randomstreams.RandomStreams(np.random.RandomState(0).randint(999999))
     mask = srng.binomial(n=1, p=1-p_dropout, size=layer.shape)
     return layer * T.cast(mask, theano.config.floatX)
 

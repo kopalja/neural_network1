@@ -90,7 +90,7 @@ class Layer(object):
 
 class Net(object):
 
-    def __init__(self, layers, train_data, validation_data, costFunction, learning_rate, minibatch_size, regulation_param):
+    def __init__(self, layers, train_data, validation_data1, validation_data2, costFunction, learning_rate, minibatch_size, regulation_param):
         
         self.training_x, self.training_y = train_data
         self.training_x = self.training_x
@@ -101,8 +101,9 @@ class Net(object):
         self.learning_rate = learning_rate
         self.minibatch_size = minibatch_size
         self.number_of_training_batches = size(train_data) // minibatch_size
-        self.number_of_validation_batches = size(validation_data) // minibatch_size
-        self.validation_x, self.validation_y = validation_data
+        self.number_of_validation_batches = size(validation_data1) // minibatch_size
+        self.validation_x1, self.validation_y1 = validation_data1
+        self.validation_x2, self.validation_y2 = validation_data2
         self.regulation_param = regulation_param
 
 
@@ -140,6 +141,9 @@ class Net(object):
         grads = T.grad(cost, self.params)
         self.speed = [ speed - self.learning_rate * grad  for speed, grad in zip(self.speed, grads)]
         #updates = [(param, param + speed ) for param, speed in zip(self.params, self.speed)]
+
+
+
         updates = [(param, param - self.learning_rate * grad ) for param, grad in zip(self.params, grads)]
 
         down_index = index * self.minibatch_size
@@ -152,10 +156,16 @@ class Net(object):
             on_unused_input = 'ignore'
         )
 
-        self.validate = theano.function(
+        self.validate1 = theano.function(
             [index], 
             accuraci, 
-            givens = { x: self.validation_x[down_index : down_index + self.minibatch_size], y: self.validation_y[down_index:down_index + self.minibatch_size] },
+            givens = { x: self.validation_x1[down_index : down_index + self.minibatch_size], y: self.validation_y1[down_index:down_index + self.minibatch_size] },
+        )
+
+        self.validate2 = theano.function(
+            [index], 
+            accuraci, 
+            givens = { x: self.validation_x2[down_index : down_index + self.minibatch_size], y: self.validation_y2[down_index:down_index + self.minibatch_size] },
         )
 
     def accuraci(self, x, y):
@@ -194,15 +204,13 @@ class Net(object):
                 #print("sum1 ", s1)
                 #print("sum2 ", s2)
 
-            current_validation = np.mean( [ self.validate(i) for i in range(self.number_of_validation_batches) ] )
+            current_validation1 = np.mean( [ self.validate1(i) for i in range(self.number_of_validation_batches) ] )
+            current_validation2 = np.mean( [ self.validate2(i) for i in range(self.number_of_validation_batches) ] )
 
-            if (best_validation > current_validation):
-                self.learning_rate /= 2
-                print("new learning rate is {0}".format(self.learning_rate))
-            else:
-                best_validation = current_validation    
 
-            print("Epoch {0}: validation accuracy {1:.2%}".format(i, current_validation))
+
+            print("Epoch {0}: positive accuracy {1:.2%}".format(i, current_validation1))
+            print("Epoch {0}: negative accuracy {1:.2%}".format(i, current_validation2))
 
 
 

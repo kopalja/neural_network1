@@ -7,7 +7,8 @@ from theano2 import *
 
 class WordGenerator(object):
     
-    key_words = ['dva', 'tri', 'pat', 'sto', 'dom', 'aaa', 'aab', 'aac', 'aad', 'aae', 'aaf']
+    key_words = ['stolick', 'trinast', 'patstos', 'stoosem', 'domovom']
+
 
 
     def char_to_array(self, ch):
@@ -21,7 +22,7 @@ class WordGenerator(object):
 
         out = []
         x = 16
-        for i in range(5):
+        for i in range(len(self.key_words)):
             out.append((num & x) >> 4 - i)
             x //= 2
         return out
@@ -33,64 +34,71 @@ class WordGenerator(object):
         return result
     
     def vectorized_reward(self, word):
-        result = np.zeros(5)
+        result = np.zeros(len(self.key_words))
         for i in range(len(self.key_words)):
             if (word == self.key_words[i]):
                 result[i] = 1
         return result
 
-    def get_training_pair(self):
-        r = np.random.randint(0, 1, 1)[0]
+    def get_training_pair(self, x):
+        r = np.random.randint(self.down, self.up, 1)[0]
 
-        if (r == 0):
+        if (r > 50):
             i = np.random.randint(0, len(self.key_words), 1)[0]
             return self.vectorized_word(self.key_words[i]), self.vectorized_reward(self.key_words[i])
         else:
-            random_ints = np.random.randint(0, 24, 3)
-            word = list("aaa")
-            for i in range(3):
+            random_ints = np.random.randint(0, 24, 7)
+            word = list("aaaaaaa")
+            for i in range(7):
                 word[i] = chr(random_ints[i] + ord('a'))
             x = "".join(word)
             return self.vectorized_word(x), self.vectorized_reward(x)
 
-    def get_batch(self, s : int):
+    def get_batch(self, s : int, x):
         data = []
         for i  in range(s):
-            data.append(w.get_training_pair())
+            data.append(w.get_training_pair(x))
         data_x = [inpt for inpt, output in data]    
         data_y = [output for inpt, output in data]    
         return tuple([data_x, data_y])  
 
     def load_data(self):
-        training_data = self.get_batch(10000)
-        validation_data = self.get_batch(1000)
+        self.down = 0
+        self.up = 100
+        training_data = self.get_batch(1000, 100)
+        self.down = 60
+        self.up = 100
+        validation_data1 = self.get_batch(100, 50)
+        self.down = 0
+        self.up = 20
+        validation_data2 = self.get_batch(100, 50)
 
         def shared(data):
             shared_x = theano.shared(np.asarray(data[0], dtype=theano.config.floatX))
             shared_y = theano.shared(np.asarray(data[1], dtype=theano.config.floatX))
             return shared_x, shared_y
-        return [shared(training_data), shared(validation_data)]
+        return [shared(training_data), shared(validation_data1), shared(validation_data2)]
 
 
 theano.config.floatX = 'float32'
 
 w = WordGenerator()
 
-training_data, validation_data = w.load_data()
+training_data, validation_data1, validation_data2  = w.load_data()
 
-print(w.get_batch(2))
 
 net = Net(
-    [15, 5, 5], 
+    [5 * 7, 6, 5], 
     training_data, 
-    validation_data, 
+    validation_data1,
+    validation_data2, 
     CostFunctions().quadratic,
-    learning_rate = 1.5, 
+    learning_rate = 0.9, 
     minibatch_size = 10, 
     regulation_param = 0.0
 )
 
 net.prepare_and_compile_function()
 
-net.train(epoch = 10)
+net.train(epoch = 100)
 
