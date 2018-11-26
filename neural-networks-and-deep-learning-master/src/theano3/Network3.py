@@ -1,16 +1,16 @@
 ####Imports##########################################
-import numpy as np
 import theano
 import theano.tensor as T
-from Layer import Layer
-from ConvLayer import ConvLayer
-from PoolLayer import PoolLayer
-from FullyConectedLayer import FullyConectedLayer
-from BatchNormalizationLayer import BatchNormalizationLayer
+import numpy as np
+from ConvLayer import *
+from PoolLayer import *
+from FullyConectedLayer import *
+from BatchNormalizationLayer import *
 from CostFunctions import CostFunctions as Cf
 from DnnLoader import DnnLoader
 from abc import ABC, abstractmethod
 import time
+
 ####Temp###############################################
 import matplotlib.pyplot as plt
 ####Enum################################################
@@ -43,12 +43,17 @@ class Network:
     def __build_computation_graph(self, layers, cost_fn, regulation_param):
         self.input_batch = T.matrix('input')
         self.desire_output_batch = T.matrix('output')
+
+        #train_d =  self.__norm(self.input_batch)
+        #valid = self.__norm(self.input_batch)
+
         train_d =  self.input_batch
         valid = self.input_batch
+
         for layer in layers:
             train_d = layer.feed_forward_dropout(train_d)
             valid = layer.feed_forward(valid)
-        self.cost = cost_fn(train_d, self.desire_output_batch) + self.__regulation(layers, regulation_param)
+        self.cost = cost_fn(train_d, self.desire_output_batch) 
         # definied by child   
         self.validation = self.result(valid, self.desire_output_batch)
         
@@ -66,9 +71,7 @@ class Network:
             print("use sgd")
             self.update = [(param, param - learning_rate * grad) for param, grad in zip(self.parameters, grads)]      
 
-    def __regulation(self, layers, regulation_param):
-        l2_norm_squared = sum([T.sum(l.w ** 2) for l in layers if l.w != []])
-        return regulation_param * (0.5 * l2_norm_squared / 1000000)
+
     
     @abstractmethod
     def result(self, output, desired_output):
@@ -77,7 +80,7 @@ class Network:
 
 #######################################################
 class Batch_Network(Network):
-    def __init__(self, layers, training_data, validation_data, cost_fn, learning_rate, minibatch_size, dropout, regulation_param, update_type, normalize_data, load_from_file = 'none', save_to_file = 'none'):
+    def __init__(self, layers, training_data, validation_data, cost_fn, learning_rate, minibatch_size, dropout, regulation_param, update_type, normalize_data = False, load_from_file = 'none', save_to_file = 'none'):
         Network.__init__(self, layers, cost_fn, learning_rate, minibatch_size, dropout, regulation_param, update_type, load_from_file)
 
         # Prepare data. Load data to shared memory. Data should be float32 dtype
@@ -108,6 +111,8 @@ class Batch_Network(Network):
             mean = np.mean(x, axis = 1)
             std = np.std(x, axis = 1) 
             x = (x - np.expand_dims(mean, 1)) / np.expand_dims(std, 1)
+
+
         x = theano.shared(np.asarray(x, dtype = theano.config.floatX), borrow = True)
         y = theano.shared(np.asarray(data[1], dtype = theano.config.floatX), borrow = True)
         return x, y
@@ -118,17 +123,23 @@ class Batch_Network(Network):
         return T.mean(T.eq(output_results, desire_results))  
 
     def train(self, epoch):
-        r = 0
+        best_validation = 0
         for i in range(epoch):
             start = time.time()
-            cost = np.zeros(self.number_of_training_batches)
             for index in range(self.number_of_training_batches):
-                cost[index] = self.__train_by_minibatch(index)
+                self.__train_by_minibatch(index)
             end = time.time()
             print("epoch time ", end - start)
             current_validation = np.mean( [ self.__validate(i) for i in range(self.number_of_validation_batches) ] )
             print("Epoch {0}: {1:.2%}".format(i, current_validation))
-        DnnLoader.Save(self.save_to_file, self.layers)
+            if (current_validation > best_validation):
+                best_validation = current_validation
+                DnnLoader.Save(self.save_to_file, self.layers)
+                print('Network saved')
+            
+    def test(self):
+        current_validation = np.mean( [ self.__validate(i) for i in range(self.number_of_validation_batches) ] )
+        print("Validation accuracy: {0:.2%}".format(current_validation))
 #######################################################
 class Online_NetWork(Network):
     def __init__(self, layers, cost_fn, learning_rate, dropout, regulation_param, momentum = False):

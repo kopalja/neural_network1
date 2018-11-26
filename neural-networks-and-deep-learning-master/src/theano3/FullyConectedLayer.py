@@ -7,18 +7,20 @@ from Layer import Layer
 
 
 class FullyConectedLayer(Layer):
-    def __init__(self, in_size, out_size, activation_fn):
+    def __init__(self, in_size, out_size, activation_fn, learned_parameters = None):
         Layer.__init__(self, [in_size, out_size, activation_fn])
-        
-        self.input_params = (in_size, out_size, activation_fn)
-        self.input_shape = in_size
+        self.in_size = in_size
         self.activation_fn = activation_fn
-        deviation = 1.0 / np.sqrt(in_size)
-        if (activation_fn == T.nnet.softmax):
-            deviation = 0
-        self.w = theano.shared(np.asarray(np.random.normal(0.0, deviation, (in_size, out_size)), theano.config.floatX), borrow=True)
-        self.b = theano.shared(np.asarray(np.random.normal(0.0, deviation, out_size), theano.config.floatX), borrow=True)
-        self.params = [self.w, self.b]
+        if learned_parameters == None:
+            deviation = 1.0 / np.sqrt(in_size)
+            if (activation_fn == T.nnet.softmax):
+                deviation = 0
+            self._w = theano.shared(np.asarray(np.random.normal(0.0, deviation, (in_size, out_size)), theano.config.floatX), borrow=True)
+            self._b = theano.shared(np.asarray(np.random.normal(0.0, deviation, out_size), theano.config.floatX), borrow=True)
+        else:
+            self._w = theano.shared(np.asarray(learned_parameters[0], theano.config.floatX), borrow = True)
+            self._b = theano.shared(np.asarray(learned_parameters[1], theano.config.floatX), borrow = True)
+        self.params = [self._w, self._b]
 
 
     def __dropout(self, layer):
@@ -31,10 +33,10 @@ class FullyConectedLayer(Layer):
     #__public__:
 
     def feed_forward(self, inpt):
-        inpt = inpt.reshape((Layer.minibatch_size, self.input_shape))
-        return self.activation_fn((1.0 - Layer.dropout) * T.dot(inpt, self.w) + self.b)
+        inpt = inpt.reshape((Layer.minibatch_size, self.in_size))
+        return self.activation_fn((1.0 - Layer.dropout) * T.dot(inpt, self._w) + self._b)
     
     def feed_forward_dropout(self, inpt):
-        inpt = inpt.reshape((Layer.minibatch_size, self.input_shape))
+        inpt = inpt.reshape((Layer.minibatch_size, self.in_size))
         inpt = self.__dropout(inpt)
-        return self.activation_fn(T.dot(inpt, self.w) + self.b)
+        return self.activation_fn(T.dot(inpt, self._w) + self._b)

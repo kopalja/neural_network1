@@ -9,29 +9,27 @@ from FullyConectedLayer import FullyConectedLayer
 
 
 class DnnLoader(object):
-    """2DConvolution, Pool and Full layers are supported"""
+    """ Layers : 2DConvolution, Pool and Full are supported \n
+        Functions : relu, sigmoid, softmax are supported """
 
     @staticmethod
     def Save(filename, layers):
         if (filename == 'none'):
-            return
-        weights = [np.asarray(l.w.eval()) for l in layers]
-        biases = [np.asarray(l.b.eval()) for l in layers]       
-        layers_type = []
-        ctor_params = []
+            return     
+        layers_type, ctor_params, learned_parameters = [], [], []
         for layer in layers:
-            ctor_params.append(layer.ctor_params)
             if type(layer) is ConvLayer:
                 layers_type.append('Convolution')
             elif type(layer) is FullyConectedLayer:
                 layers_type.append('Full')
             elif type(layer) is PoolLayer:
                 layers_type.append('Pool')
+            ctor_params.append(layer.ctor_params)
+            learned_parameters.append([np.array(p.eval()).tolist() for p in layer.params])
         data = {
-            "layers": layers_type,
-            "inputparams": ctor_params,
-            "weights": [w.tolist() for w in weights],
-            "biases": [b.tolist() for b in biases]
+            'layers': layers_type,
+            'ctor_parameters': ctor_params,
+            'learned_parameters': learned_parameters
         }
         f = open(filename, "w")
         json.dump(data, f)
@@ -42,27 +40,29 @@ class DnnLoader(object):
         f = open(filename, "r")
         data = json.load(f)
         f.close()
-        weights = [np.array(w) for w in data["weights"]]
-        biases = [np.array(b) for b in data["biases"]]
-        layers = []
-        for layer, params, w, b in zip(data["layers"], data["inputparams"], weights, biases):
-            newLayer = 0
-            if (params[len(params) - 1] == 'relu'):
-                params[len(params) - 1] = T.nnet.relu
-            elif (params[len(params) - 1] == 'sigmoid'):
-                params[len(params) - 1] = T.nnet.sigmoid
-            elif (params[len(params) - 1] == 'softmax'):
-                params[len(params) - 1] = T.nnet.softmax
+        DnnLoader.print_description(data['layers'], data['ctor_parameters'])
+        loaded_layers = []
+        for layer, ctor_parameters, learned_parameters in zip(data['layers'], data['ctor_parameters'], data['learned_parameters']):
+            last = len(ctor_parameters) - 1
+            if (ctor_parameters[last] == 'relu'):
+                ctor_parameters[last] = T.nnet.relu
+            elif (ctor_parameters[last] == 'sigmoid'):
+                ctor_parameters[last] = T.nnet.sigmoid
+            elif (ctor_parameters[last] == 'softmax'):
+                ctor_parameters[last] = T.nnet.softmax
 
-            if layer == "Convolution":
-                newLayer = ConvLayer(params[0], params[1], params[2], params[3])
-            elif layer == "Full":
-                newLayer = FullyConectedLayer(params[0], params[1], params[2])
-            elif layer == "Pool":
-                newLayer = PoolLayer(params[0])
-            newLayer.w = theano.shared(np.asarray(w, theano.config.floatX), borrow=True) 
-            newLayer.b = theano.shared(np.asarray(b, theano.config.floatX), borrow=True)
-            if (layer == "Convolution" or layer == "Full"):
-                newLayer.params = [newLayer.w, newLayer.b]
-            layers.append(newLayer)
-        return layers
+            if layer == 'Convolution':
+                newLayer = ConvLayer(ctor_parameters[0], ctor_parameters[1], ctor_parameters[2], ctor_parameters[3], learned_parameters)
+            elif layer == 'Full':
+                newLayer = FullyConectedLayer(ctor_parameters[0], ctor_parameters[1], ctor_parameters[2], learned_parameters)
+            elif layer == 'Pool':
+                newLayer = PoolLayer(ctor_parameters[0])
+            loaded_layers.append(newLayer)
+        return loaded_layers
+
+    
+    @staticmethod
+    def print_description(layers, params):
+        for layer, params in zip(layers, params):
+            print(layer, ": ")
+            print("     input parameters", params)

@@ -2,12 +2,9 @@
 import numpy as np
 
 
-intpt = [2, 3]
+inpt = [2, 3, 4]
 
-def foo(x, y):
-    return x + y
+last = inpt[len(inpt) - 1] 
 
-
-inpt = np.array()
-
+last = -1
 print(inpt)
