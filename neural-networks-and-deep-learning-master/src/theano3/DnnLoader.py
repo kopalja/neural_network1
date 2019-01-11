@@ -3,9 +3,9 @@ import theano
 import theano.tensor as T
 import json
 
-from ConvLayer import ConvLayer
-from PoolLayer import PoolLayer
-from FullyConectedLayer import FullyConectedLayer
+from ConvLayer import *
+from PoolLayer import *
+from FullyConectedLayer import *
 
 
 class DnnLoader(object):
@@ -14,7 +14,7 @@ class DnnLoader(object):
 
     @staticmethod
     def Save(filename, layers):
-        if (filename == 'none'):
+        if (filename == None):
             return     
         layers_type, ctor_params, learned_parameters = [], [], []
         for layer in layers:
@@ -34,13 +34,14 @@ class DnnLoader(object):
         f = open(filename, "w")
         json.dump(data, f)
         f.close()
+        print('Network saved')
 
     @staticmethod
     def Load(filename):
         f = open(filename, "r")
         data = json.load(f)
         f.close()
-        DnnLoader.print_description(data['layers'], data['ctor_parameters'])
+        DnnLoader.__print_description(data['layers'], data['ctor_parameters'])
         loaded_layers = []
         for layer, ctor_parameters, learned_parameters in zip(data['layers'], data['ctor_parameters'], data['learned_parameters']):
             last = len(ctor_parameters) - 1
@@ -50,6 +51,8 @@ class DnnLoader(object):
                 ctor_parameters[last] = T.nnet.sigmoid
             elif (ctor_parameters[last] == 'softmax'):
                 ctor_parameters[last] = T.nnet.softmax
+            else:
+                NotImplementedError("Activation function {0} is not supported".format(ctor_parameters[last]))
 
             if layer == 'Convolution':
                 newLayer = ConvLayer(ctor_parameters[0], ctor_parameters[1], ctor_parameters[2], ctor_parameters[3], learned_parameters)
@@ -57,12 +60,29 @@ class DnnLoader(object):
                 newLayer = FullyConectedLayer(ctor_parameters[0], ctor_parameters[1], ctor_parameters[2], learned_parameters)
             elif layer == 'Pool':
                 newLayer = PoolLayer(ctor_parameters[0])
+            else:
+                NotImplementedError("Layer type {0} is not supported".format(layer))
             loaded_layers.append(newLayer)
         return loaded_layers
 
+
     
     @staticmethod
-    def print_description(layers, params):
+    def __print_description(layers, params):
+        print('==================================')
+        print('Loaded network architecture :')
         for layer, params in zip(layers, params):
-            print(layer, ": ")
-            print("     input parameters", params)
+            args = ''
+            for arg in params:
+                if (type(arg) == list):
+                    arg = ''.join(str(str(i) + ', ') for i in arg)
+                    arg = arg[:-2]
+                    arg = '[' + arg + ']'
+                elif(type(arg) == int):
+                    arg = str(arg)
+                args = args + ", " + arg
+            args = args[2:]
+            line = '\t' + layer + '(' + args + ')'
+            print(line)
+        print('==================================')
+        

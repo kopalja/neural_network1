@@ -8,7 +8,7 @@ def vectorized_result(j):
     e[j] = 1.0
     return e
     
-def load_data_shared(filename="../data/mnist.pkl.gz"):
+def load_data(filename="../data/mnist.pkl.gz"):
     f = gzip.open(filename, 'rb')
     training_data, validation_data, test_data = pickle.load(f, encoding='latin1')
 

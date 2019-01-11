@@ -4,34 +4,37 @@ import theano.tensor as T
 from Layer import Layer
 
 
+
+
 class ConvLayer(Layer):
-    def __init__(self, input_shape, output_images, kernel_size, activation_fn, learned_parameters = None):
+    def __init__(self, input_shape, output_images, kernel_size, activation_fn, learned_parameters = None): 
         Layer.__init__(self, [input_shape, output_images, kernel_size, activation_fn])
-        self.input_shape = input_shape
-        self.filter_shape = (output_images, input_shape[0], kernel_size, kernel_size)
-        self.activation_fn = activation_fn
+        self.__input_shape = input_shape
+        self.__filter_shape = (output_images, input_shape[0], kernel_size, kernel_size)
+        self.__activation_fn = activation_fn
         if learned_parameters == None:
-            n_out = np.prod(self.filter_shape) / (output_images * 4)
-            self._w = theano.shared(np.asarray(np.random.normal(0.0, 1.0 / np.sqrt(n_out), self.filter_shape), theano.config.floatX), borrow=True)
-            self._b = theano.shared(np.asarray(np.random.normal(0.0, 1.0, output_images), theano.config.floatX), borrow=True)
+            n_out = np.prod(self.__filter_shape) / (output_images * 4)
+            self.__weights = theano.shared(value = np.random.normal(0.0, 1.0 / np.sqrt(n_out), self.__filter_shape).astype('float32'), borrow = True)
+            self.__biases = theano.shared(value = np.random.normal(0.0, 1.0, output_images).astype('float32'), borrow = True)
         else:
-            self._w = theano.shared(np.asarray(learned_parameters[0], theano.config.floatX), borrow = True)
-            self._b = theano.shared(np.asarray(learned_parameters[1], theano.config.floatX), borrow = True)          
-        self.params = [self._w, self._b]  
+            self.__weights = theano.shared(value = np.asarray(learned_parameters[0], 'float32'), borrow = True)
+            self.__biases = theano.shared(value = np.asarray(learned_parameters[1], 'float32'), borrow = True)          
+        self.params = [self.__weights, self.__biases]  
 
 
     #__public__: 
     
     def feed_forward(self, inpt):
-        inpt_shape = ((Layer.minibatch_size, self.input_shape[0], self.input_shape[1], self.input_shape[2]))
+        inpt_shape = (Layer.minibatch_size, self.__input_shape[0], self.__input_shape[1], self.__input_shape[2])
         inpt = inpt.reshape(inpt_shape)
-        conv_output = theano.tensor.nnet.conv2d(input = inpt, filters = self._w, filter_shape = self.filter_shape, input_shape = inpt_shape)
-        return self.activation_fn(conv_output + self._b.dimshuffle('x', 0, 'x', 'x'))
+        conv_output = theano.tensor.nnet.conv2d(input = inpt, filters = self.__weights, filter_shape = self.__filter_shape, input_shape = inpt_shape)
+        return self.__activation_fn(conv_output + self.__biases.dimshuffle('x', 0, 'x', 'x'))
     
-    # no dropout in convolution
     def feed_forward_dropout(self, inpt):
+        """ No dropout in convolution """
         return self.feed_forward(inpt)
 
+    
 
 
 
