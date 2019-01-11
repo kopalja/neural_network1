@@ -107,7 +107,7 @@ def save_data_pictures(path, cats_and_dogs):
     validation_data = [inputs[len(data) - 2000:len(data)], outputs[len(data) - 2000:len(data)]]
 
     result = [training_data, validation_data]
-    file_name = path + 'dogs_and_snakes.pkl'
+    file_name = path + 'dogs_and_cats.pkl'
     output_file = open(file_name, 'wb')
     pickle.dump(result, output_file)
 
@@ -120,16 +120,19 @@ def _load_category(folder_path):
     data = []
     for image in images:
         image_path = folder_path + image
-        img = cv2.imread(image_path)
-        r = img[..., 0].ravel()
-        g = img[..., 1].ravel()
-        b = img[..., 2].ravel()
-        data.append(np.concatenate((r, g, b)))
+        img = cv2.imread(image_path, 0)
+        small = cv2.resize(img, (0,0), fx=0.5, fy=0.5)
+        data.append(small.ravel())
     return data
 ############################################################################################################################
 
 
-save_data_pictures("C:\\Users\\kopi\\Desktop\\snakes_urls\\", False)
+
+
+
+
+
+save_data_pictures("C:\\Users\\kopi\\Desktop\\snakes_urls\\", True)
 
 
 

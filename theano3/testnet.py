@@ -15,7 +15,8 @@ training_data, mnist_validation_data, test_data = load_data()
 #expanded_data, _, _ = load_data("data/mnist_expanded.pkl.gz")
 t11 = training_data[0]
 t22 = training_data[1]
-mnist = [t11[:200], t22[:200]]
+training_data = [t11[:500], t22[:500]]
+# mnist = [t11[:200], t22[:200]]
 
 
 
@@ -26,18 +27,21 @@ f.close()
 
 t1 = training_data[0]
 t2 = training_data[1]
-t1 = [i[0:300*400] for i in t1]
+t1 = [i[0:150 * 200] for i in t1]
+
+for i in range(len(t1)):
+    t1[i] = t1[i] / 255.0
 
 print(len(t1))
-training_data = [t1[:2000], t2[:2000]]
+training_data = [t1[:500], t2[:500]]
 
-t1 = validation_data[0]
-t2 = validation_data[1]
-t1 = [i[0:300*400] for i in t1]
-validation_data = [t1[:300], t2[:300]]
+# t1 = validation_data[0]
+# t2 = validation_data[1]
+# t1 = [i[0:150*200] for i in t1]
+# validation_data = [t1[:300], t2[:300]]
 
-# ar = t1[3]
-# ar = np.reshape(ar, newshape=(300, 400))
+
+# ar = np.reshape(ar, newshape=(150, 200))
 # plt.imshow(ar, cmap="gray")
 # plt.show()
 
@@ -45,31 +49,22 @@ validation_data = [t1[:300], t2[:300]]
 
 net = Batch_Network(
     layers = LayersWrapper(
-        input_shape = (1, 28, 28),
+        input_shape = (1, 150, 200),
         layers_description = (
             ConvLayer_w(output_images = 20, kernel_size = 5, activation_fn = T.nnet.sigmoid),
             PoolLayer_w(shape = (2, 2)),
-            ConvLayer_w(output_images = 40, kernel_size = 5, activation_fn = T.nnet.sigmoid),
-            PoolLayer_w(shape = (2, 2)),
-            #ConvLayer_w(output_images = 60, kernel_size = 5, activation_fn = T.nnet.relu),
-            #ConvLayer_w(output_images = 80, kernel_size = 5, activation_fn = T.nnet.relu),
-            # ConvLayer_w(output_images = 60, kernel_size = 5, activation_fn = T.nnet.relu),
-            # PoolLayer_w(shape = (2, 2)),
-            # ConvLayer_w(output_images = 40, kernel_size = 5, activation_fn = T.nnet.relu),
-            # ConvLayer_w(output_images = 40, kernel_size = 5, activation_fn = T.nnet.relu),
-            # PoolLayer_w(shape = (2, 2)),
-            # ConvLayer_w(output_images = 40, kernel_size = 5, activation_fn = T.nnet.relu),
-            #PoolLayer_w(shape = (2, 2)),
-            #FullyConectedLayer_w(size = 100, activation_fn = T.nnet.relu),    
-            FullyConectedLayer_w(size = 100, activation_fn = T.nnet.sigmoid),   
+            ConvLayer_w(output_images = 20, kernel_size = 5, activation_fn = T.nnet.sigmoid),
+            PoolLayer_w(shape = (2, 2)),   
+            #FullyConectedLayer_w(size = 10, activation_fn = T.nnet.sigmoid),   
+            FullyConectedLayer_w(size = 100, activation_fn = T.nnet.sigmoid), 
             FullyConectedLayer_w(size = 2, activation_fn = T.nnet.sigmoid),      
         )
     ),
-    training_data = mnist,
-    validation_data = mnist_validation_data, 
-    cost_fn = Cf.quadratic,
-    learning_rate = 0.03, 
-    minibatch_size = 40, 
+    training_data = training_data,
+    validation_data = training_data, 
+    cost_fn = Cf.crossEntropy,
+    learning_rate = 0.3, 
+    minibatch_size = 10, 
     dropout = 0.5,
     l2_regulation = 0.1,
     update_type = Update.Sgd,
@@ -77,4 +72,4 @@ net = Batch_Network(
     load_from_file = None,
     save_to_file = None
 )
-net.train(epoch = 150)
+net.train(epoch = 1500)

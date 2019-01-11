@@ -24,6 +24,7 @@ theano.compile.mode.Mode(optimizer = 'fast_run')
 ########################################################
 class Network:
     def __init__(self, layers, cost_fn, learning_rate, minibatch_size, dropout, l2_regulation, update_type, load_net_file):
+        self._trainning_func_output = 0
         self._star_time_stamp = time.time()
         self.__create_layers(layers, minibatch_size, dropout, load_net_file)
         self.__set_learning_parameters(update_type)
@@ -61,13 +62,13 @@ class Network:
             valid_feed_forward = layer.feed_forward(valid_feed_forward)
         # definied by child   
         self._validation_func_output = self._result_interpretation(valid_feed_forward, self._desire_output_batch)
-        self._trainning_func_output = train_feed_forward
         self._trainning_func_output = cost_fn(train_feed_forward, self._desire_output_batch)
         return self._trainning_func_output
         
     def __define_network_update(self, cost_graph, learning_rate, update_type):
         """ Based on network parameters and cost define parameters update. """
         grads = T.grad(cost_graph, self.__parameters)
+        self._trainning_func_output = grads
         if update_type == Update.Sgd:
             parameters_update = [(param, param - learning_rate * grad) for param, grad in zip(self.__parameters, grads)]  
             return parameters_update
@@ -146,7 +147,7 @@ class Batch_Network(Network):
             start = time.time()
             for index in range(self.__number_of_training_batches):
                 out = self.__train_by_minibatch(index)
-            print(np.mean(out[0]))
+            print(np.max(out[0]))
             end = time.time()
             print("epoch time ", end - start)
         

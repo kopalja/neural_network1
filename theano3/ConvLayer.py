@@ -27,7 +27,7 @@ class ConvLayer(Layer):
     def feed_forward(self, inpt):
         inpt_shape = (Layer.minibatch_size, self.__input_shape[0], self.__input_shape[1], self.__input_shape[2])
         inpt = inpt.reshape(inpt_shape)
-        conv_output = theano.tensor.nnet.conv2d(input = inpt, filters = self.__weights, filter_shape = self.__filter_shape, input_shape = inpt_shape)
+        conv_output = theano.tensor.nnet.conv2d(input = inpt, filters = self.__weights, filter_shape = self.__filter_shape, border_mode = 'valid', input_shape = inpt_shape)
         return self.__activation_fn(conv_output + self.__biases.dimshuffle('x', 0, 'x', 'x'))
     
     def feed_forward_dropout(self, inpt):
